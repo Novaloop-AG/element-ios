@@ -338,10 +338,6 @@ class AllChatsCoordinator: NSObject, SplitViewMasterCoordinatorProtocol {
             })
         }
 
-        subMenuActions.append(UIAction(title: VectorL10n.sideMenuActionFeedback, image: UIImage(systemName: "questionmark.circle")) { [weak self] action in
-            self?.showBugReport()
-        })
-        
         actions.append(UIMenu(title: "", options: .displayInline, children: subMenuActions))
         actions.append(UIMenu(title: "", options: .displayInline, children: [
             UIAction(title: VectorL10n.settingsSignOut, image: UIImage(systemName: "rectangle.portrait.and.arrow.right.fill"), attributes: .destructive) { [weak self] action in
@@ -604,16 +600,6 @@ class AllChatsCoordinator: NSObject, SplitViewMasterCoordinatorProtocol {
         inviteFriendsPresenter.present(for: myUserId, from: self.navigationRouter.toPresentable(), sourceView: sourceView, animated: true)
     }
     
-    private func showBugReport() {
-        let bugReportViewController = BugReportViewController()
-        
-        // Show in fullscreen to animate presentation along side menu dismiss
-        bugReportViewController.modalPresentationStyle = .fullScreen
-        bugReportViewController.modalTransitionStyle = .crossDissolve
-        
-        self.navigationRouter.present(bugReportViewController, animated: true)
-    }
-
     private func userAvatarViewData(from mxSession: MXSession?) -> UserAvatarViewData? {
         guard let mxSession = mxSession, let userId = mxSession.myUserId, let mediaManager = mxSession.mediaManager, let myUser = mxSession.myUser else {
             return nil
