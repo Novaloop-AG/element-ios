@@ -1,4 +1,4 @@
-// 
+//
 // Copyright 2024 New Vector Ltd.
 // Copyright 2020 Vector Creations Ltd
 //
@@ -12,7 +12,7 @@ import Foundation
 /// In future, it may be automatically generated from xcconfig files
 @objcMembers
 final class BuildSettings: NSObject {
-    
+
     // MARK: - Bundle Settings
     static var applicationGroupIdentifier: String {
         guard let applicationGroupIdentifier = Bundle.app.object(forInfoDictionaryKey: "applicationGroupIdentifier") as? String else {
@@ -20,21 +20,21 @@ final class BuildSettings: NSObject {
         }
         return applicationGroupIdentifier
     }
-    
+
     static var baseBundleIdentifier: String {
         guard let baseBundleIdentifier = Bundle.app.object(forInfoDictionaryKey: "baseBundleIdentifier") as? String else {
             fatalError("baseBundleIdentifier should be defined")
         }
         return baseBundleIdentifier
     }
-    
+
     static var keychainAccessGroup: String {
         guard let keychainAccessGroup = Bundle.app.object(forInfoDictionaryKey: "keychainAccessGroup") as? String else {
             fatalError("keychainAccessGroup should be defined")
         }
         return keychainAccessGroup
     }
-    
+
     static var applicationURLScheme: String? {
         guard let urlTypes = Bundle.app.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [AnyObject],
               let urlTypeDictionary = urlTypes.first as? [String: AnyObject],
@@ -42,26 +42,26 @@ final class BuildSettings: NSObject {
               let externalURLScheme = urlSchemes.first as? String else {
             return nil
         }
-        
+
         return externalURLScheme
     }
-    
+
     static var pushKitAppIdProd: String {
         return baseBundleIdentifier + ".ios.voip.prod"
     }
-    
+
     static var pushKitAppIdDev: String {
         return baseBundleIdentifier + ".ios.voip.dev"
     }
-    
+
     static var pusherAppIdProd: String {
         return baseBundleIdentifier + ".ios.prod"
     }
-    
+
     static var pusherAppIdDev: String {
         return baseBundleIdentifier + ".ios.dev"
     }
-    
+
     static var pushKitAppId: String {
         #if DEBUG
         return pushKitAppIdDev
@@ -69,7 +69,7 @@ final class BuildSettings: NSObject {
         return pushKitAppIdProd
         #endif
     }
-    
+
     static var pusherAppId: String {
         #if DEBUG
         return pusherAppIdDev
@@ -77,48 +77,48 @@ final class BuildSettings: NSObject {
         return pusherAppIdProd
         #endif
     }
-    
+
     // Element-Web instance for the app
-    static let applicationWebAppUrlString = "https://app.element.io"
-    
-    
+    static let applicationWebAppUrlString = "https://app.healthchat.ch"
+
+
     // MARK: - Localization
-    
+
     /// Whether to allow the app to use a right to left layout or force left to right for all languages
     static let disableRightToLeftLayout = true
-    
-    
+
+
     // MARK: - Server configuration
-    
+
     /// Force the user to set a homeserver instead of using the default one
     static let forceHomeserverSelection = false
 
     /// Default server proposed on the authentication screen
     static var serverConfigDefaultHomeserverUrlString: String {
-        MDMSettings.serverConfigDefaultHomeserverUrlString ?? "https://matrix.org"
+        MDMSettings.serverConfigDefaultHomeserverUrlString ?? "https://matrix.healthchat.ch"
     }
-    
+
     /// Default identity server
-    static let serverConfigDefaultIdentityServerUrlString = "https://vector.im"
-        
+    static let serverConfigDefaultIdentityServerUrlString = "https://matrix.healthchat.ch"
+
     static var serverConfigSygnalAPIUrlString: String {
-        MDMSettings.serverConfigSygnalAPIUrlString ?? "https://matrix.org/_matrix/push/v1/notify"
+        MDMSettings.serverConfigSygnalAPIUrlString ?? "https://matrix.healthchat.ch/_matrix/push/v1/notify"
     }
-    
+
     // MARK: - Legal URLs
-    
+
     // Note: Set empty strings to hide the related entry in application settings
-    static let applicationCopyrightUrlString = "https://element.io/copyright"
-    static let applicationPrivacyPolicyUrlString = "https://element.io/privacy"
-    static let applicationAcceptableUsePolicyUrlString = "https://element.io/acceptable-use-policy-terms"
+    static let applicationCopyrightUrlString = ""
+    static let applicationPrivacyPolicyUrlString = ""
+    static let applicationAcceptableUsePolicyUrlString = ""
     static let applicationHelpUrlString =
-    "https://element.io/help"
-    
-    
+    ""
+
+
     // MARK: - Permalinks
     // Hosts/Paths for URLs that will considered as valid permalinks. Those permalinks are opened within the app.
     static let permalinkSupportedHosts: [String: [String]] = [
-        "app.element.io": [],
+        "app.healthchat.ch": [],
         "staging.element.io": [],
         "develop.element.io": [],
         "mobile.element.io": [""],
@@ -134,15 +134,15 @@ final class BuildSettings: NSObject {
 //        "example.com": ["/"],
 //        "www.example.com": ["/"],
     ]
-    
+
     // For use in clients that use a custom base url for permalinks rather than matrix.to.
     // This baseURL is used to generate permalinks within the app (E.g. timeline message permalinks).
     // Optional String that when set is used as permalink base, when nil matrix.to format is used.
     // Example value would be "https://www.example.com", note there is no trailing '/'.
     static var clientPermalinkBaseUrl: String? {
-        MDMSettings.clientPermalinkBaseUrl
+        MDMSettings.clientPermalinkBaseUrl ?? "https://app.healthchat.ch"
     }
-    
+
     // MARK: - VoIP
     static var allowVoIPUsage: Bool {
         #if canImport(JitsiMeetSDK)
@@ -152,19 +152,19 @@ final class BuildSettings: NSObject {
         #endif
     }
     static let stunServerFallbackUrlString: String? = "stun:turn.matrix.org"
-    
+
     // MARK: -  Public rooms Directory
     // List of homeservers for the public rooms directory
     static let publicRoomsDirectoryServers = [
         "matrix.org",
         "gitter.im"
     ]
-    
+
     // MARK: -  Rooms Screen
     static let roomsAllowToJoinPublicRooms: Bool = true
-    
+
     // MARK: - Analytics
-    
+
     /// A type that represents how to set up the analytics module in the app.
     ///
     /// **Note:** Analytics are disabled by default for forks.
@@ -179,7 +179,7 @@ final class BuildSettings: NSObject {
         /// The URL to open with more information about analytics terms.
         let termsURL: URL
     }
-    
+
     #if DEBUG
     /// The configuration to use for analytics during development. Set `isEnabled` to false to disable analytics in debug builds.
     static let analyticsConfiguration = AnalyticsConfiguration(isEnabled: BuildSettings.baseBundleIdentifier.starts(with: "im.vector.app"),
@@ -193,15 +193,15 @@ final class BuildSettings: NSObject {
                                                                apiKey: "phc_Jzsm6DTm6V2705zeU5dcNvQDlonOR68XvX2sh1sEOHO",
                                                                termsURL: URL(string: "https://element.io/cookie-policy")!)
     #endif
-    
-    
+
+
     // MARK: - Bug report
     static let bugReportEndpointUrlString = "https://riot.im/bugreports"
     // Use the name allocated by the bug report server
     static let bugReportApplicationId = "riot-ios"
     static let bugReportUISIId = "element-auto-uisi"
-    
-    
+
+
     // MARK: - Integrations
     static let integrationsUiUrlString = "https://scalar.vector.im/"
     static let integrationsRestApiUrlString = "https://scalar.vector.im/api"
@@ -216,77 +216,77 @@ final class BuildSettings: NSObject {
     // Jitsi server used outside integrations to create conference calls from the call button in the timeline.
     // Setting this to nil effectively disables Jitsi conference calls (given that there is no wellknown override).
     // Note: this will not remove the conference call button, use roomScreenAllowVoIPForNonDirectRoom setting.
-    static let jitsiServerUrl: URL? = URL(string: "https://jitsi.riot.im")
+    static let jitsiServerUrl: URL? = URL(string: "https://jitsi.healthchat.ch")
 
-    
+
     // MARK: - Features
-    
+
     /// Setting to force protection by pin code
     static let forcePinProtection: Bool = false
-    
+
     /// Max allowed time to continue using the app without prompting PIN
     static let pinCodeGraceTimeInSeconds: TimeInterval = 0
-    
+
     /// Force non-jailbroken app usage
     static let forceNonJailbrokenUsage: Bool = true
-    
-    static let allowSendingStickers: Bool = true
-    
-    static let allowLocalContactsAccess: Bool = true
-    
-    static let allowInviteExernalUsers: Bool = true
-    
+
+    static let allowSendingStickers: Bool = false
+
+    static let allowLocalContactsAccess: Bool = false
+
+    static let allowInviteExernalUsers: Bool = false
+
     static let allowBackgroundAudioMessagePlayback: Bool = true
-    
+
     // MARK: - Side Menu
     static let enableSideMenu: Bool = true && !newAppLayoutEnabled
-    static let sideMenuShowInviteFriends: Bool = true
+    static let sideMenuShowInviteFriends: Bool = false
 
     /// Whether to read the `io.element.functional_members` state event and exclude any service members when computing a room's name and avatar.
     static let supportFunctionalMembers: Bool = true
-    
+
     // MARK: - Feature Specifics
-    
+
     /// Not allowed pin codes. User won't be able to select one of the pin in the list.
     static let notAllowedPINs: [String] = []
-    
+
     /// Maximum number of allowed pin failures when unlocking, before force logging out the user. Defaults to `3`
     static let maxAllowedNumberOfPinFailures: Int = 3
-    
+
     /// Maximum number of allowed biometrics failures when unlocking, before fallbacking the user to the pin if set or logging out the user. Defaults to `5`
     static let maxAllowedNumberOfBiometricsFailures: Int = 5
-    
+
     /// Indicates should the app log out the user when number of PIN failures reaches `maxAllowedNumberOfPinFailures`. Defaults to `false`
     static let logOutUserWhenPINFailuresExceeded: Bool = false
-    
+
     /// Indicates should the app log out the user when number of biometrics failures reaches `maxAllowedNumberOfBiometricsFailures`. Defaults to `false`
     static let logOutUserWhenBiometricsFailuresExceeded: Bool = false
-    
+
     static let showNotificationsV2: Bool = true
-    
+
     // MARK: - Main Tabs
-    
+
     static let homeScreenShowFavouritesTab: Bool = true
     static let homeScreenShowPeopleTab: Bool = true
     static let homeScreenShowRoomsTab: Bool = true
 
     // MARK: - General Settings Screen
-    
+
     static let settingsScreenShowUserFirstName: Bool = false
     static let settingsScreenShowUserSurname: Bool = false
-    static let settingsScreenAllowAddingEmailThreepids: Bool = true
-    static let settingsScreenAllowAddingPhoneThreepids: Bool = true
-    static let settingsScreenShowThreepidExplanatory: Bool = true
-    static let settingsScreenShowDiscoverySettings: Bool = true
-    static let settingsScreenAllowIdentityServerConfig: Bool = true
+    static let settingsScreenAllowAddingEmailThreepids: Bool = false
+    static let settingsScreenAllowAddingPhoneThreepids: Bool = false
+    static let settingsScreenShowThreepidExplanatory: Bool = false
+    static let settingsScreenShowDiscoverySettings: Bool = false
+    static let settingsScreenAllowIdentityServerConfig: Bool = false
     static let settingsScreenShowConfirmMediaSize: Bool = true
-    static let settingsScreenShowAdvancedSettings: Bool = true
-    static let settingsScreenShowLabSettings: Bool = true
-    static let settingsScreenAllowChangingRageshakeSettings: Bool = true
-    static let settingsScreenAllowChangingCrashUsageDataSettings: Bool = true
-    static let settingsScreenAllowBugReportingManually: Bool = true
-    static let settingsScreenAllowDeactivatingAccount: Bool = true
-    static let settingsScreenShowChangePassword:Bool = true
+    static let settingsScreenShowAdvancedSettings: Bool = false
+    static let settingsScreenShowLabSettings: Bool = false
+    static let settingsScreenAllowChangingRageshakeSettings: Bool = false
+    static let settingsScreenAllowChangingCrashUsageDataSettings: Bool = false
+    static let settingsScreenAllowBugReportingManually: Bool = false
+    static let settingsScreenAllowDeactivatingAccount: Bool = false
+    static let settingsScreenShowChangePassword:Bool = false
     static let settingsScreenShowEnableStunServerFallback: Bool = true
     static let settingsScreenShowNotificationDecodedContentOption: Bool = true
     static let settingsSecurityScreenShowSessions:Bool = true
@@ -301,27 +301,27 @@ final class BuildSettings: NSObject {
 
     // MARK: - Timeline settings
     static let roomInputToolbarCompressionMode: MediaCompressionMode = .prompt
-    
+
     enum MediaCompressionMode {
         case prompt, small, medium, large, none
     }
-    
+
     // MARK: - Room Creation Screen
-    
+
     static let roomCreationScreenAllowEncryptionConfiguration: Bool = true
     static let roomCreationScreenRoomIsEncrypted: Bool = true
     static let roomCreationScreenAllowRoomTypeConfiguration: Bool = true
     static let roomCreationScreenRoomIsPublic: Bool = false
-    
+
     // MARK: - Room Screen
-    
+
     static let roomScreenAllowVoIPForDirectRoom: Bool = true
     static let roomScreenAllowVoIPForNonDirectRoom: Bool = true
     static let roomScreenAllowCameraAction: Bool = true
     static let roomScreenAllowMediaLibraryAction: Bool = true
-    static let roomScreenAllowStickerAction: Bool = true
+    static let roomScreenAllowStickerAction: Bool = false
     static let roomScreenAllowFilesAction: Bool = true
-    
+
     // Timeline style
     static let roomScreenAllowTimelineStyleConfiguration: Bool = true
     static let roomScreenTimelineDefaultStyleIdentifier: RoomTimelineStyleIdentifier = .plain
@@ -330,21 +330,21 @@ final class BuildSettings: NSObject {
     }
     static let roomScreenUseOnlyLatestUserAvatarAndName: Bool = false
 
-    /// Allow split view detail view stacking    
+    /// Allow split view detail view stacking
     static let allowSplitViewDetailsScreenStacking: Bool = true
-    
+
     // MARK: - Room Contextual Menu
 
     static let roomContextualMenuShowMoreOptionForMessages: Bool = true
     static let roomContextualMenuShowMoreOptionForStates: Bool = true
-    static let roomContextualMenuShowReportContentOption: Bool = true
+    static let roomContextualMenuShowReportContentOption: Bool = false
 
     // MARK: - Room Info Screen
-    
-    static let roomInfoScreenShowIntegrations: Bool = true
+
+    static let roomInfoScreenShowIntegrations: Bool = false
 
     // MARK: - Room Settings Screen
-    
+
     static let roomSettingsScreenShowLowPriorityOption: Bool = true
     static let roomSettingsScreenShowDirectChatOption: Bool = true
     static let roomSettingsScreenAllowChangingAccessSettings: Bool = true
@@ -354,60 +354,60 @@ final class BuildSettings: NSObject {
     static let roomSettingsScreenAdvancedShowEncryptToVerifiedOption: Bool = true
 
     // MARK: - Room Member Screen
-    
+
     static let roomMemberScreenShowIgnore: Bool = true
 
     // MARK: - Message
     static let messageDetailsAllowShare: Bool = true
-    static let messageDetailsAllowPermalink: Bool = true
+    static let messageDetailsAllowPermalink: Bool = false
     static let messageDetailsAllowViewSource: Bool = true
     static let messageDetailsAllowSave: Bool = true
     static let messageDetailsAllowCopyMedia: Bool = true
     static let messageDetailsAllowPasteMedia: Bool = true
-    
+
     // MARK: - Notifications
     static let decryptNotificationsByDefault: Bool = true
-    
+
     // MARK: - HTTP
     /// Additional HTTP headers will be sent by all requests. Not recommended to use request-specific headers, like `Authorization`.
     /// Empty dictionary by default.
     static let httpAdditionalHeaders: [String: String] = [:]
-    
-    
+
+
     // MARK: - Authentication Screen
-    static let authScreenShowRegister = true
-    static let authScreenShowPhoneNumber = true
-    static let authScreenShowForgotPassword = true
-    static let authScreenShowCustomServerOptions = true
-    static let authScreenShowSocialLoginSection = true
-    
+    static let authScreenShowRegister = false
+    static let authScreenShowPhoneNumber = false
+    static let authScreenShowForgotPassword = false
+    static let authScreenShowCustomServerOptions = false
+    static let authScreenShowSocialLoginSection = false
+
     // MARK: - Authentication Options
     static let authEnableRefreshTokens = false
-    
+
     // MARK: - Onboarding
     static let onboardingShowAccountPersonalization = true
     static let onboardingEnableNewAuthenticationFlow = true
-    
+
     // MARK: - Unified Search
     static let unifiedSearchScreenShowPublicDirectory = true
-    
+
     // MARK: - Secrets Recovery
-    static let secretsRecoveryAllowReset = true
-    
+    static let secretsRecoveryAllowReset = false
+
     // MARK: - UISI Autoreporting
     static let cryptoUISIAutoReportingEnabled = false
-    
+
     // MARK: - Polls
-    
+
     static let pollsEnabled = true
-    
+
     // MARK: - Location Sharing
-    
+
     /// Overwritten by the home server's .well-known configuration (if any exists)
     static let defaultTileServerMapStyleURL = URL(string: "https://api.maptiler.com/maps/streets/style.json?key=fU3vlMsMn4Jb6dnEIFsx")!
-    
-    static let locationSharingEnabled = true
-    
+
+    static let locationSharingEnabled = false
+
     // MARK: - Voice Broadcast
     static let voiceBroadcastChunkLength: Int = 120
     static let voiceBroadcastMaxLength: UInt = 14400 // 240min.
@@ -424,26 +424,26 @@ final class BuildSettings: NSObject {
     static let showUnsupportedEventsInRoomHistory: Bool = false
     static let sortRoomMembersUsingLastSeenTime: Bool = true
     static let syncLocalContacts: Bool = false
-    
+
     // MARK: - New App Layout
     static let newAppLayoutEnabled = true
 
     // MARK: - QR Login
-    
+
     /// Flag indicating whether the QR login enabled from login screen
     static let qrLoginEnabledFromNotAuthenticated = true
     /// Flag indicating whether the QR login enabled from Device Manager screen
     static let qrLoginEnabledFromAuthenticated = false
     /// Flag indicating whether displaying QRs enabled for the QR login screens
     static let qrLoginEnableDisplayingQRs = false
-    
+
     static let rendezvousServerBaseURL = URL(string: "https://rendezvous.lab.element.dev/")!
-    
+
     // MARK: - Alerts
     static let showUnverifiedSessionsAlert = true
-    
+
     // MARK: - Sunset
-    
+
     /// Meta data about the app that will replaces this one with Matrix 2.0 support.
     struct ReplacementApp {
         /// The app's display name, used in marketing banners.
@@ -455,7 +455,7 @@ final class BuildSettings: NSObject {
         /// A fallback URL that will be opened if there are any issues showing the App Store page in-app.
         let appStoreURL = URL(string: "https://apps.apple.com/app/element-x-secure-chat-call/id1631335820")!
     }
-    
+
     /// Information about the Matrix 2.0 compatible app that will replace this one in the future.
     ///
     /// The presence of this setting acts as a feature flag to show marketing banners for the app
