@@ -102,7 +102,7 @@ final class BuildSettings: NSObject {
     static let serverConfigDefaultIdentityServerUrlString = "https://matrix.healthchat.ch"
 
     static var serverConfigSygnalAPIUrlString: String {
-        MDMSettings.serverConfigSygnalAPIUrlString ?? "https://matrix.healthchat.ch/_matrix/push/v1/notify"
+        MDMSettings.serverConfigSygnalAPIUrlString ?? "https://sygnal.healthchat.ch/_matrix/push/v1/notify"
     }
 
     // MARK: - Legal URLs
