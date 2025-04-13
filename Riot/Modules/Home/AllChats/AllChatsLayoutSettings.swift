@@ -21,7 +21,7 @@ class AllChatsLayoutSettings: NSObject, NSCoding {
     let sorting: AllChatsLayoutSortingType
     
     init(sections: AllChatsLayoutSectionType = [],
-         filters: AllChatsLayoutFilterType = [],
+         filters: AllChatsLayoutFilterType = [.unreads, .favourites, .people],
          sorting: AllChatsLayoutSortingType = .activity) {
         self.sections = sections
         self.filters = filters
