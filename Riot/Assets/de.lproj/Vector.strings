@@ -2781,3 +2781,18 @@
 "settings_manage_account_action" = "Konto verwalten";
 "manage_session_redirect" = "Du wirst zum Authentifizierungsdienst deines Servers weitergeleitet, um das Abmelden abzuschließen.";
 "manage_session_redirect_error" = "Funktion aktuell nicht verfügbar. Bitte kontaktiere deine Home-Server-Administration";
+
+// Extended Profile Keys
+"extended_profile_section_title" = "Profil";
+"extended_profile_address" = "Adresse";
+"extended_profile_title" = "Titel";
+"extended_profile_specialization" = "Fachgebiet";
+"extended_profile_website" = "Website";
+"extended_profile_further_info" = "Weitere Infos";
+"extended_profile_practice_name" = "Praxisname";
+"extended_profile_business_street" = "Straße";
+"extended_profile_business_street_nr" = "Hausnummer";
+"extended_profile_business_city" = "Stadt";
+"extended_profile_business_plz" = "PLZ";
+"extended_profile_business_email" = "E-Mail-Adresse";
+"extended_profile_business_tel" = "Telefonnummer";
