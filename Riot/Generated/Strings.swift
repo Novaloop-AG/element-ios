@@ -2343,6 +2343,58 @@ public class VectorL10n: NSObject {
   public static var existing: String { 
     return VectorL10n.tr("Vector", "existing") 
   }
+  /// Address
+  public static var extendedProfileAddress: String { 
+    return VectorL10n.tr("Vector", "extended_profile_address") 
+  }
+  /// City
+  public static var extendedProfileBusinessCity: String { 
+    return VectorL10n.tr("Vector", "extended_profile_business_city") 
+  }
+  /// E-Mail-Address
+  public static var extendedProfileBusinessEmail: String { 
+    return VectorL10n.tr("Vector", "extended_profile_business_email") 
+  }
+  /// Zip code
+  public static var extendedProfileBusinessPlz: String { 
+    return VectorL10n.tr("Vector", "extended_profile_business_plz") 
+  }
+  /// Street
+  public static var extendedProfileBusinessStreet: String { 
+    return VectorL10n.tr("Vector", "extended_profile_business_street") 
+  }
+  /// Street number
+  public static var extendedProfileBusinessStreetNr: String { 
+    return VectorL10n.tr("Vector", "extended_profile_business_street_nr") 
+  }
+  /// Phone number
+  public static var extendedProfileBusinessTel: String { 
+    return VectorL10n.tr("Vector", "extended_profile_business_tel") 
+  }
+  /// Further information
+  public static var extendedProfileFurtherInfo: String { 
+    return VectorL10n.tr("Vector", "extended_profile_further_info") 
+  }
+  /// Practice name
+  public static var extendedProfilePracticeName: String { 
+    return VectorL10n.tr("Vector", "extended_profile_practice_name") 
+  }
+  /// Profil
+  public static var extendedProfileSectionTitle: String { 
+    return VectorL10n.tr("Vector", "extended_profile_section_title") 
+  }
+  /// Specialization
+  public static var extendedProfileSpecialization: String { 
+    return VectorL10n.tr("Vector", "extended_profile_specialization") 
+  }
+  /// Title
+  public static var extendedProfileTitle: String { 
+    return VectorL10n.tr("Vector", "extended_profile_title") 
+  }
+  /// Website
+  public static var extendedProfileWebsite: String { 
+    return VectorL10n.tr("Vector", "extended_profile_website") 
+  }
   /// The link %@ is taking you to another site: %@\n\nAre you sure you want to continue?
   public static func externalLinkConfirmationMessage(_ p1: String, _ p2: String) -> String {
     return VectorL10n.tr("Vector", "external_link_confirmation_message", p1, p2)
