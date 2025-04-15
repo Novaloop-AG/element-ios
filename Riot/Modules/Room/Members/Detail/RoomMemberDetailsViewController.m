@@ -23,31 +23,44 @@ Please see LICENSE in the repository root for full details.
 #define TABLEVIEW_ROW_CELL_HEIGHT         46
 #define TABLEVIEW_SECTION_HEADER_HEIGHT   28
 
+// Extended profile field constants
+NSString *const EXT_PROFILE_KEY_TITLE = @"io.element.profile.title";
+NSString *const EXT_PROFILE_KEY_SPECIALIZATION = @"io.element.profile.specialization";
+NSString *const EXT_PROFILE_KEY_PRACTICE_NAME = @"io.element.profile.practice_name";
+NSString *const EXT_PROFILE_KEY_BUSINESS_STREET = @"io.element.profile.business_street";
+NSString *const EXT_PROFILE_KEY_BUSINESS_STREET_NR = @"io.element.profile.business_street_nr";
+NSString *const EXT_PROFILE_KEY_BUSINESS_PLZ = @"io.element.profile.business_plz";
+NSString *const EXT_PROFILE_KEY_BUSINESS_CITY = @"io.element.profile.business_city";
+NSString *const EXT_PROFILE_KEY_BUSINESS_EMAIL = @"io.element.profile.business_email";
+NSString *const EXT_PROFILE_KEY_BUSINESS_TEL = @"io.element.profile.business_tel";
+NSString *const EXT_PROFILE_KEY_WEBSITE = @"io.element.profile.website";
+NSString *const EXT_PROFILE_KEY_FURTHER_INFO = @"io.element.profile.further_info";
+
 @interface RoomMemberDetailsViewController () <UIGestureRecognizerDelegate, DeviceTableViewCellDelegate, RoomMemberTitleViewDelegate, KeyVerificationCoordinatorBridgePresenterDelegate, UserVerificationCoordinatorBridgePresenterDelegate>
 {
     RoomMemberTitleView* memberTitleView;
-    
+
     NSInteger securityIndex;
     NSArray<NSNumber*> *securityActionsArray;
-    
+
     /**
      List of the admin actions on this member.
      */
     NSMutableArray<NSNumber*> *adminActionsArray;
     NSInteger adminToolsIndex;
-    
+
     /**
      List of the basic actions on this member.
      */
     NSMutableArray<NSNumber*> *otherActionsArray;
     NSInteger otherActionsIndex;
-    
+
     /**
      List of the direct chats (room ids) with this member.
      */
     NSMutableArray<NSString*> *directChatsArray;
     NSInteger directChatsIndex;
-    
+
     /**
      Devices
      */
@@ -55,17 +68,21 @@ Please see LICENSE in the repository root for full details.
     NSInteger devicesIndex;
     KeyVerificationCoordinatorBridgePresenter *keyVerificationCoordinatorBridgePresenter;
 
-    
+    /**
+     Extended profile section
+     */
+    NSInteger extendedProfileIndex;
+
     /**
      Observe UIApplicationWillChangeStatusBarOrientationNotification to hide/show bubbles bg.
      */
     id UIApplicationWillChangeStatusBarOrientationNotificationObserver;
-    
+
     /**
      Observe kThemeServiceDidChangeThemeNotification to handle user interface theme change.
      */
     id kThemeServiceDidChangeThemeNotificationObserver;
-    
+
     /**
      The current visibility of the status bar in this view controller.
      */
@@ -97,6 +114,10 @@ Please see LICENSE in the repository root for full details.
 
 @property(nonatomic) AnalyticsScreenTracker *screenTracker;
 
+// Extended profile properties
+@property(nonatomic, strong) NSDictionary *extendedProfileData;
+@property(nonatomic, strong) NSArray<NSString *> *extendedProfileKeys;
+
 @end
 
 @implementation RoomMemberDetailsViewController
@@ -120,19 +141,19 @@ Please see LICENSE in the repository root for full details.
 - (void)finalizeInit
 {
     [super finalizeInit];
-    
+
     // Setup `MXKViewControllerHandling` properties
     self.enableBarTintColorStatusChange = NO;
     self.rageShakeManager = [RageShakeManager sharedManager];
     self.encryptionTrustLevel = UserEncryptionTrustLevelUnknown;
-    
+
     adminActionsArray = [[NSMutableArray alloc] init];
     otherActionsArray = [[NSMutableArray alloc] init];
     directChatsArray = [[NSMutableArray alloc] init];
-    
+
     // Keep visible the status bar by default.
     isStatusBarHidden = NO;
-    
+
     self.screenTracker = [[AnalyticsScreenTracker alloc] initWithScreen:AnalyticsScreenUser];
 }
 
@@ -140,13 +161,13 @@ Please see LICENSE in the repository root for full details.
 {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
-    
+
     memberTitleView = [RoomMemberTitleView roomMemberTitleView];
     memberTitleView.delegate = self;
-        
+
     // Define directly the navigation titleView with the custom title view instance. Do not use anymore a container.
-    self.navigationItem.titleView = memberTitleView;    
-    
+    self.navigationItem.titleView = memberTitleView;
+
     // Add tap to show the room member avatar in fullscreen
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
     tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
@@ -155,7 +176,7 @@ Please see LICENSE in the repository root for full details.
     [tap setDelegate:self];
     [self.roomMemberAvatarMask addGestureRecognizer:tap];
     self.roomMemberAvatarMask.userInteractionEnabled = YES;
-    
+
     // Need to listen to the tap gesture in the title view too.
     tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
     [tap setNumberOfTouchesRequired:1];
@@ -163,32 +184,32 @@ Please see LICENSE in the repository root for full details.
     [tap setDelegate:self];
     [memberTitleView.memberAvatarMask addGestureRecognizer:tap];
     memberTitleView.memberAvatarMask.userInteractionEnabled = YES;
-    
+
     // Register collection view cell class
     [self.tableView registerClass:TableViewCellWithButton.class forCellReuseIdentifier:[TableViewCellWithButton defaultReuseIdentifier]];
     [self.tableView registerClass:RoomTableViewCell.class forCellReuseIdentifier:[RoomTableViewCell defaultReuseIdentifier]];
     [self.tableView registerClass:DeviceTableViewCell.class forCellReuseIdentifier:[DeviceTableViewCell defaultReuseIdentifier]];
     [self.tableView registerClass:MXKTableViewCell.class forCellReuseIdentifier:[MXKTableViewCell defaultReuseIdentifier]];
-    
+
     // Hide line separators of empty cells
     self.tableView.tableFooterView = [[UIView alloc] init];
-    
+
     // Enable self sizing cells
     self.tableView.rowHeight = UITableViewAutomaticDimension;
     self.tableView.estimatedRowHeight = 50;
-    
+
     // Observe UIApplicationWillChangeStatusBarOrientationNotification to hide/show bubbles bg.
     UIApplicationWillChangeStatusBarOrientationNotificationObserver = [[NSNotificationCenter defaultCenter] addObserverForName:UIApplicationWillChangeStatusBarOrientationNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notif) {
-        
+
         NSNumber *orientation = (NSNumber*)(notif.userInfo[UIApplicationStatusBarOrientationUserInfoKey]);
         self.bottomImageView.hidden = (orientation.integerValue == UIInterfaceOrientationLandscapeLeft || orientation.integerValue == UIInterfaceOrientationLandscapeRight);
     }];
-    
+
     // Observe user interface theme change.
     kThemeServiceDidChangeThemeNotificationObserver = [[NSNotificationCenter defaultCenter] addObserverForName:kThemeServiceDidChangeThemeNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notif) {
-        
+
         [self userInterfaceThemeDidChange];
-        
+
     }];
 }
 
@@ -198,19 +219,19 @@ Please see LICENSE in the repository root for full details.
     self.navigationController.navigationBar.translucent = YES;
 
     self.activityIndicator.backgroundColor = ThemeService.shared.theme.overlayBackgroundColor;
-    
+
     self.memberHeaderView.backgroundColor = ThemeService.shared.theme.baseColor;
     self.roomMemberNameLabel.textColor = ThemeService.shared.theme.textPrimaryColor;
     self.roomMemberUserIdLabel.textColor = ThemeService.shared.theme.textPrimaryColor;
 
     self.roomMemberStatusLabel.textColor = ThemeService.shared.theme.tintColor;
     self.roomMemberPowerLevelLabel.textColor = ThemeService.shared.theme.textPrimaryColor;
-    
+
     // Check the table view style to select its bg color.
     self.tableView.backgroundColor = ((self.tableView.style == UITableViewStylePlain) ? ThemeService.shared.theme.backgroundColor : ThemeService.shared.theme.headerBackgroundColor);
     self.view.backgroundColor = self.tableView.backgroundColor;
     self.tableView.separatorColor = ThemeService.shared.theme.lineBreakColor;
-    
+
     if (self.tableView.dataSource)
     {
         [self.tableView reloadData];
@@ -233,67 +254,67 @@ Please see LICENSE in the repository root for full details.
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
-    
+
     [self.screenTracker trackScreen];
 
     [self userInterfaceThemeDidChange];
 
     // Hide the bottom border of the navigation bar to display the expander header
     [self hideNavigationBarBorder:YES];
-    
+
     // Handle here the bottom image visibility
     UIInterfaceOrientation screenOrientation = [[UIApplication sharedApplication] statusBarOrientation];
     self.bottomImageView.hidden = (screenOrientation == UIInterfaceOrientationLandscapeLeft || screenOrientation == UIInterfaceOrientationLandscapeRight);
-    
+
     [self refreshUserEncryptionTrustLevel];
 }
 
 - (void)viewWillDisappear:(BOOL)animated
 {
     [super viewWillDisappear:animated];
-    
+
     // Restore navigation bar display
     [self hideNavigationBarBorder:NO];
-    
+
     self.bottomImageView.hidden = YES;
 }
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id <UIViewControllerTransitionCoordinator>)coordinator
 {
     [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
-    
+
     // Restore navigation bar display
     [self hideNavigationBarBorder:NO];
-    
+
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(coordinator.transitionDuration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        
+
         // Hide the bottom border of the navigation bar
         [self hideNavigationBarBorder:YES];
-        
+
     });
 }
 
 - (void)destroy
 {
     [super destroy];
-    
+
     adminActionsArray = nil;
     otherActionsArray = nil;
     directChatsArray = nil;
     devicesArray = nil;
-    
+
     if (UIApplicationWillChangeStatusBarOrientationNotificationObserver)
     {
         [[NSNotificationCenter defaultCenter] removeObserver:UIApplicationWillChangeStatusBarOrientationNotificationObserver];
         UIApplicationWillChangeStatusBarOrientationNotificationObserver = nil;
     }
-    
+
     if (kThemeServiceDidChangeThemeNotificationObserver)
     {
         [[NSNotificationCenter defaultCenter] removeObserver:kThemeServiceDidChangeThemeNotificationObserver];
         kThemeServiceDidChangeThemeNotificationObserver = nil;
     }
-    
+
     [memberTitleView removeFromSuperview];
     memberTitleView = nil;
 }
@@ -301,7 +322,7 @@ Please see LICENSE in the repository root for full details.
 - (void)viewDidLayoutSubviews
 {
     [super viewDidLayoutSubviews];
-    
+
     // Check whether the title view has been created and rendered.
     if (memberTitleView && memberTitleView.superview)
     {
@@ -309,12 +330,12 @@ Please see LICENSE in the repository root for full details.
         // This position depends automatically on the screen orientation.
         CGPoint memberAvatarOriginInTitleView = memberTitleView.memberAvatarMask.frame.origin;
         CGPoint memberAvatarActualPosition = [memberTitleView convertPoint:memberAvatarOriginInTitleView toView:self.view];
-        
+
         CGFloat avatarHeaderHeight = memberAvatarActualPosition.y + self.memberThumbnail.frame.size.height;
         if (_roomMemberAvatarHeaderBackgroundHeightConstraint.constant != avatarHeaderHeight)
         {
             _roomMemberAvatarHeaderBackgroundHeightConstraint.constant = avatarHeaderHeight;
-            
+
             // Force the layout of the header
             [self.memberHeaderView layoutIfNeeded];
         }
@@ -330,7 +351,7 @@ Please see LICENSE in the repository root for full details.
         // Use the vector style placeholder
         return [AvatarGenerator generateAvatarForMatrixItem:self.mxRoomMember.userId withDisplayName:self.mxRoomMember.displayname];
     }
-    
+
     return [MXKTools paintImage:AssetImages.placeholder.image
                       withColor:ThemeService.shared.theme.tintColor];
 }
@@ -338,13 +359,13 @@ Please see LICENSE in the repository root for full details.
 - (void)updateMemberInfo
 {
     if (self.mxRoomMember)
-    {        
+    {
         self.roomMemberNameContainerView.hidden = !self.mxRoomMember.displayname;
-        
-        self.roomMemberNameLabel.text = self.mxRoomMember.displayname; 
-        
-        self.roomMemberUserIdLabel.text = self.mxRoomMember.userId;    
-        
+
+        self.roomMemberNameLabel.text = self.mxRoomMember.displayname;
+
+        self.roomMemberUserIdLabel.text = self.mxRoomMember.userId;
+
         // Update member power level
         MXWeakify(self);
         [self.mxRoom state:^(MXRoomState *roomState) {
@@ -352,9 +373,9 @@ Please see LICENSE in the repository root for full details.
 
             MXRoomPowerLevels *powerLevels = [roomState powerLevels];
             NSInteger powerLevel = [powerLevels powerLevelOfUserWithUserID:self.mxRoomMember.userId];
-            
+
             RoomPowerLevel roomPowerLevel = [RoomPowerLevelHelper roomPowerLevelFrom:powerLevel];
-            
+
             switch (roomPowerLevel) {
                 case RoomPowerLevelAdmin:
                     self.roomMemberPowerLevelLabel.text = [VectorL10n roomMemberPowerLevelAdminIn:self.mxRoom.summary.displayName];
@@ -370,21 +391,21 @@ Please see LICENSE in the repository root for full details.
                     break;
             }
         }];
-        
+
         NSString* presenceText;
-        
+
         NSString *userId = self.mxRoomMember.userId;
-        
+
         if (userId)
         {
             MXUser *user = [self.mxRoom.mxSession userWithUserId:userId];
             presenceText = [Tools presenceText:user];
         }
-        
+
         self.roomMemberStatusLabel.text = presenceText;
-        
+
         self.roomMemberAvatarBadgeImageView.image = [EncryptionTrustLevelBadgeImageHelper userBadgeImageFor:self.encryptionTrustLevel];
-        
+
         // Retrieve the existing direct chats
         [directChatsArray removeAllObjects];
         NSArray *directRoomIds = self.mainSession.directRooms[self.mxRoomMember.userId];
@@ -396,21 +417,147 @@ Please see LICENSE in the repository root for full details.
                 [directChatsArray addObject:directRoomId];
             }
         }
+
+        // Load extended profile data
+        [self loadExtendedProfile];
     }
-    
+
     // Complete data update and reload table view
     [super updateMemberInfo];
+}
+
+- (void)loadExtendedProfile
+{
+    NSString *userId = self.mxRoomMember.userId;
+
+    if (!userId)
+    {
+        return;
+    }
+
+    MXWeakify(self);
+    // Diese Implementierung verwendet NSURLSession direkt und umgeht die MXRestClient-API vollständig
+    // Dadurch müssen wir keine internen APIs verwenden und können trotzdem auf die erweiterten Profildaten zugreifen
+    
+    // Erstelle den API-Pfad für das Benutzerprofil
+    NSString *homeserverUrl = self.mainSession.matrixRestClient.homeserver;
+    NSString *urlString = [NSString stringWithFormat:@"%@/_matrix/client/v3/profile/%@", 
+                           homeserverUrl, 
+                           [self percentEscapeString:userId]];
+    NSURL *url = [NSURL URLWithString:urlString];
+    
+    // Erstelle die Anfrage
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    
+    // Füge den Auth-Token hinzu, wenn vorhanden
+    if (self.mainSession.matrixRestClient.credentials.accessToken) {
+        [request setValue:[NSString stringWithFormat:@"Bearer %@", self.mainSession.matrixRestClient.credentials.accessToken] 
+         forHTTPHeaderField:@"Authorization"];
+    }
+    
+    // Führe die Anfrage aus
+    NSURLSessionTask *task = [[NSURLSession sharedSession] dataTaskWithRequest:request 
+                                                             completionHandler:^(NSData * _Nullable data, 
+                                                                                 NSURLResponse * _Nullable response, 
+                                                                                 NSError * _Nullable error) {
+        if (error) {
+            MXLogDebug(@"[RoomMemberDetailsVC] Failed to load extended profile for %@: %@", userId, error);
+            return;
+        }
+        
+        NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)response;
+        if (httpResponse.statusCode != 200) {
+            MXLogDebug(@"[RoomMemberDetailsVC] Failed to load extended profile for %@: HTTP %ld", 
+                       userId, (long)httpResponse.statusCode);
+            return;
+        }
+        
+        NSError *jsonError = nil;
+        NSDictionary *jsonResponse = [NSJSONSerialization JSONObjectWithData:data 
+                                                                     options:0 
+                                                                       error:&jsonError];
+        if (jsonError) {
+            MXLogDebug(@"[RoomMemberDetailsVC] Failed to parse extended profile for %@: %@", 
+                       userId, jsonError);
+            return;
+        }
+        
+        // Wechsele zurück zum Hauptthread für UI-Updates
+        dispatch_async(dispatch_get_main_queue(), ^{
+            MXStrongifyAndReturnIfNil(self);
+            
+            // Extrahiere die erweiterten Profilinformationen
+            NSMutableDictionary *extendedData = [NSMutableDictionary dictionary];
+            NSMutableArray *keys = [NSMutableArray array];
+            
+            // Matrix stellt die erweiterten Profildaten in normaler Form
+            // und im "content"-Dictionary zur Verfügung - prüfe beide Stellen
+            NSDictionary *contentData = jsonResponse[@"content"];
+            
+            // Durchsuche nach allen erweiterten Profilfeldern
+            for (NSString *key in @[EXT_PROFILE_KEY_TITLE, 
+                                   EXT_PROFILE_KEY_SPECIALIZATION, 
+                                   EXT_PROFILE_KEY_PRACTICE_NAME,
+                                   EXT_PROFILE_KEY_BUSINESS_STREET,
+                                   EXT_PROFILE_KEY_BUSINESS_STREET_NR,
+                                   EXT_PROFILE_KEY_BUSINESS_PLZ,
+                                   EXT_PROFILE_KEY_BUSINESS_CITY,
+                                   EXT_PROFILE_KEY_BUSINESS_EMAIL,
+                                   EXT_PROFILE_KEY_BUSINESS_TEL,
+                                   EXT_PROFILE_KEY_WEBSITE, 
+                                   EXT_PROFILE_KEY_FURTHER_INFO]) {
+                // Prüfe zuerst im Hauptobjekt
+                if (jsonResponse[key]) {
+                    extendedData[key] = jsonResponse[key];
+                    [keys addObject:key];
+                } 
+                // Prüfe dann im content-Dictionary, falls verfügbar
+                else if (contentData && contentData[key]) {
+                    extendedData[key] = contentData[key];
+                    [keys addObject:key];
+                }
+            }
+            
+            // Debug: Log der gefundenen Daten
+            if (keys.count > 0) {
+                MXLogDebug(@"[RoomMemberDetailsVC] Found %lu extended profile fields for %@", 
+                          (unsigned long)keys.count, userId);
+            } else {
+                MXLogDebug(@"[RoomMemberDetailsVC] No extended profile fields found for %@. Response: %@", 
+                          userId, jsonResponse);
+            }
+            
+            // Aktualisiere die Eigenschaften
+            if (keys.count > 0) {
+                self.extendedProfileData = extendedData;
+                self.extendedProfileKeys = keys;
+                
+                // Aktualisiere die Tabelle
+                [self.tableView reloadData];
+            }
+        });
+    }];
+    
+    [task resume];
+}
+
+// Hilfsmethode zum URL-Encoding
+- (NSString *)percentEscapeString:(NSString *)string
+{
+    // Verwende NSURL-Methoden für URL-Encoding
+    NSString *encodedString = [string stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
+    return encodedString ?: @"";
 }
 
 - (void)refreshUserEncryptionTrustLevel
 {
     NSString *userId = self.mxRoomMember.userId;
-    
+
     if (!userId)
     {
         return;
     }
-    
+
     [self.mxRoom.mxSession.crypto downloadKeys:@[userId] forceDownload:YES success:^(MXUsersDevicesMap<MXDeviceInfo *> *usersDevicesInfoMap, NSDictionary<NSString *,MXCrossSigningInfo *> *crossSigningKeysMap) {
         [self.mxRoom encryptionTrustLevelForUserId:userId onComplete:^(UserEncryptionTrustLevel userEncryptionTrustLevel) {
             self.encryptionTrustLevel = userEncryptionTrustLevel;
@@ -468,7 +615,7 @@ Please see LICENSE in the repository root for full details.
     {
         mainNavigationController = self.splitViewController.viewControllers.firstObject;
     }
-    
+
     if (isHidden)
     {
         // The default shadow image is nil. When non-nil, this property represents a custom shadow image to show instead
@@ -495,27 +642,27 @@ Please see LICENSE in the repository root for full details.
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
     NSInteger sectionCount = 0;
-    
+
     BOOL isOneself = NO;
-    
+
     // Check user's power level before allowing an action (kick, ban, ...)
     MXRoomPowerLevels *powerLevels = [self.mxRoom.dangerousSyncState powerLevels];
     NSInteger memberPowerLevel = [powerLevels powerLevelOfUserWithUserID:self.mxRoomMember.userId];
     NSInteger oneSelfPowerLevel = [powerLevels powerLevelOfUserWithUserID:self.mainSession.myUser.userId];
-    
+
     [adminActionsArray removeAllObjects];
     [otherActionsArray removeAllObjects];
-    
+
     // Consider the case of the user himself
     if (self.isRoomMemberCurrentUser)
     {
         isOneself = YES;
-        
+
         if (self.enableLeave)
         {
             [otherActionsArray addObject:@(MXKRoomMemberDetailsActionLeave)];
         }
-        
+
         if (oneSelfPowerLevel >= [powerLevels minimumPowerLevelForSendingEventAsStateEvent:kMXEventTypeStringRoomPowerLevels])
         {
             // Check whether the user is admin (in this case he may reduce his power level to become moderator or less, EXCEPT if he is the only admin).
@@ -530,7 +677,7 @@ Please see LICENSE in the repository root for full details.
                         adminCount ++;
                     }
                 }
-                
+
                 if (adminCount > 1)
                 {
                     [adminActionsArray addObject:@(MXKRoomMemberDetailsActionSetModerator)];
@@ -560,19 +707,19 @@ Please see LICENSE in the repository root for full details.
                     {
                         [adminActionsArray addObject:@(MXKRoomMemberDetailsActionSetAdmin)];
                     }
-                    
+
                     // Check whether the member may become moderator
                     if (oneSelfPowerLevel >= RoomPowerLevelModerator && memberPowerLevel < RoomPowerLevelModerator)
                     {
                         [adminActionsArray addObject:@(MXKRoomMemberDetailsActionSetModerator)];
                     }
-                    
+
                     if (memberPowerLevel >= RoomPowerLevelModerator)
                     {
                         [adminActionsArray addObject:@(MXKRoomMemberDetailsActionSetDefaultPowerLevel)];
                     }
                 }
-                
+
                 // Check conditions to be able to kick someone
                 if (oneSelfPowerLevel >= [powerLevels kick] && oneSelfPowerLevel > memberPowerLevel)
                 {
@@ -583,7 +730,7 @@ Please see LICENSE in the repository root for full details.
                 {
                     [adminActionsArray addObject:@(MXKRoomMemberDetailsActionBan)];
                 }
-                
+
                 break;
             }
             case MXMembershipLeave:
@@ -614,7 +761,7 @@ Please see LICENSE in the repository root for full details.
                 break;
             }
         }
-        
+
         // List the other actions
         if (self.enableVoipCall)
         {
@@ -622,7 +769,7 @@ Please see LICENSE in the repository root for full details.
             [otherActionsArray addObject:@(MXKRoomMemberDetailsActionStartVoiceCall)];
             [otherActionsArray addObject:@(MXKRoomMemberDetailsActionStartVideoCall)];
         }
-        
+
         // Check whether the option Ignore may be presented
         if (RiotSettings.shared.roomMemberScreenShowIgnore)
         {
@@ -636,33 +783,38 @@ Please see LICENSE in the repository root for full details.
                 [otherActionsArray addObject:@(MXKRoomMemberDetailsActionUnignore)];
             }
         }
-        
+
         if (self.enableMention)
         {
             // Add mention option
             [otherActionsArray addObject:@(MXKRoomMemberDetailsActionMention)];
         }
     }
-    
+
     if (self.mxRoom.summary.isEncrypted)
     {
         securityActionsArray = @[@(MXKRoomMemberDetailsActionSecurity),
                                  @(MXKRoomMemberDetailsActionSecurityInformation)];
-        
+
     }
     else
     {
         securityActionsArray = @[@(MXKRoomMemberDetailsActionSecurity)];
     }
-    
-    securityIndex = adminToolsIndex = otherActionsIndex = directChatsIndex = devicesIndex = -1;
-    
-    
+
+    securityIndex = adminToolsIndex = otherActionsIndex = directChatsIndex = devicesIndex = extendedProfileIndex = -1;
+
+    // Füge erweiterte Profildaten hinzu, wenn vorhanden
+    if (self.extendedProfileData && self.extendedProfileKeys.count > 0)
+    {
+        extendedProfileIndex = sectionCount++;
+    }
+
     if (securityActionsArray.count)
     {
         securityIndex = sectionCount++;
     }
-    
+
     if (otherActionsArray.count)
     {
         otherActionsIndex = sectionCount++;
@@ -671,17 +823,17 @@ Please see LICENSE in the repository root for full details.
     {
         adminToolsIndex = sectionCount++;
     }
-    
+
     if (!isOneself)
     {
         directChatsIndex = sectionCount++;
     }
-    
+
     if (devicesArray.count)
     {
         devicesIndex = sectionCount++;
     }
-    
+
     return sectionCount;
 }
 
@@ -707,7 +859,11 @@ Please see LICENSE in the repository root for full details.
     {
         return (devicesArray.count);
     }
-    
+    else if (section == extendedProfileIndex)
+    {
+        return self.extendedProfileKeys.count;
+    }
+
     return 0;
 }
 
@@ -733,14 +889,18 @@ Please see LICENSE in the repository root for full details.
     {
         return [VectorL10n roomParticipantsActionSectionDevices];
     }
-    
+    else if (section == extendedProfileIndex)
+    {
+        return [VectorL10n extendedProfileSectionTitle];
+    }
+
     return nil;
 }
 
 - (NSString*)actionButtonTitle:(MXKRoomMemberDetailsAction)action
 {
     NSString *title;
-    
+
     switch (action)
     {
         case MXKRoomMemberDetailsActionInvite:
@@ -802,24 +962,52 @@ Please see LICENSE in the repository root for full details.
         default:
             break;
     }
-    
+
     return title;
+}
+
+- (NSString *)displayNameForProfileKey:(NSString *)key
+{
+    if ([key isEqualToString:EXT_PROFILE_KEY_TITLE]) {
+        return [VectorL10n extendedProfileTitle];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_SPECIALIZATION]) {
+        return [VectorL10n extendedProfileSpecialization];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_WEBSITE]) {
+        return [VectorL10n extendedProfileWebsite];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_FURTHER_INFO]) {
+        return [VectorL10n extendedProfileFurtherInfo];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_PRACTICE_NAME]) {
+        return [VectorL10n extendedProfilePracticeName];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_BUSINESS_STREET]) {
+        return [VectorL10n extendedProfileBusinessStreet];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_BUSINESS_STREET_NR]) {
+        return [VectorL10n extendedProfileBusinessStreetNr];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_BUSINESS_CITY]) {
+        return [VectorL10n extendedProfileBusinessCity];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_BUSINESS_PLZ]) {
+        return [VectorL10n extendedProfileBusinessPlz];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_BUSINESS_EMAIL]) {
+        return [VectorL10n extendedProfileBusinessEmail];
+    } else if ([key isEqualToString:EXT_PROFILE_KEY_BUSINESS_TEL]) {
+        return [VectorL10n extendedProfileBusinessTel];
+    }
+    return key;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     UITableViewCell *cell;
-    
+
     if (indexPath.section == securityIndex && indexPath.row < securityActionsArray.count)
     {
         NSNumber *actionNumber = securityActionsArray[indexPath.row];
-        
+
         if (actionNumber.unsignedIntegerValue == MXKRoomMemberDetailsActionSecurity)
         {
             MXKTableViewCell *securityStatusCell = [tableView dequeueReusableCellWithIdentifier:[MXKTableViewCell defaultReuseIdentifier] forIndexPath:indexPath];
-            
+
             NSString *statusText;
-            
+
             switch (self.encryptionTrustLevel) {
                 case UserEncryptionTrustLevelTrusted:
                     statusText = [VectorL10n roomParticipantsActionSecurityStatusVerified];
@@ -844,27 +1032,27 @@ Please see LICENSE in the repository root for full details.
                     statusText = [VectorL10n roomParticipantsActionSecurityStatusLoading];
                     break;
             }
-            
+
             securityStatusCell.imageView.image = [EncryptionTrustLevelBadgeImageHelper userBadgeImageFor:self.encryptionTrustLevel];
-            
+
             securityStatusCell.textLabel.numberOfLines = 1;
             securityStatusCell.textLabel.font = [UIFont systemFontOfSize:16.0];
             securityStatusCell.textLabel.textColor = ThemeService.shared.theme.textPrimaryColor;
             securityStatusCell.textLabel.text = statusText;
-            
+
             securityStatusCell.backgroundColor = ThemeService.shared.theme.backgroundColor;
             securityStatusCell.contentView.backgroundColor = [UIColor clearColor];
             securityStatusCell.selectionStyle = UITableViewCellSelectionStyleNone;
             [securityStatusCell vc_setAccessoryDisclosureIndicatorWithCurrentTheme];
-            
+
             cell = securityStatusCell;
         }
         else if (actionNumber.unsignedIntegerValue == MXKRoomMemberDetailsActionSecurityInformation)
         {
             MXKTableViewCell *encryptionInfoCell = [tableView dequeueReusableCellWithIdentifier:[MXKTableViewCell defaultReuseIdentifier] forIndexPath:indexPath];
-            
+
             NSMutableString *encryptionInformation = [NSMutableString new];
-            
+
             switch (self.encryptionTrustLevel) {
                 case UserEncryptionTrustLevelWarning:
                 case UserEncryptionTrustLevelNotVerified:
@@ -891,18 +1079,18 @@ Please see LICENSE in the repository root for full details.
                 default:
                     break;
             }
-            
+
             if (encryptionInformation.length)
             {
                 [encryptionInformation appendString:@"\n"];
             }
-            
+
             encryptionInfoCell.textLabel.backgroundColor = [UIColor clearColor];
             encryptionInfoCell.textLabel.numberOfLines = 0;
             encryptionInfoCell.textLabel.text = encryptionInformation;
             encryptionInfoCell.textLabel.font = [UIFont systemFontOfSize:14.0];
             encryptionInfoCell.textLabel.textColor = ThemeService.shared.theme.headerTextPrimaryColor;
-            
+
             encryptionInfoCell.selectionStyle = UITableViewCellSelectionStyleNone;
             encryptionInfoCell.accessoryType = UITableViewCellAccessoryNone;
             encryptionInfoCell.contentView.backgroundColor = ThemeService.shared.theme.headerBackgroundColor;
@@ -912,14 +1100,14 @@ Please see LICENSE in the repository root for full details.
             UIView *bgView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 1, 1)];
             bgView.backgroundColor = ThemeService.shared.theme.headerBackgroundColor;
             encryptionInfoCell.backgroundView = bgView;
-            
+
             cell = encryptionInfoCell;
         }
     }
     else if (indexPath.section == adminToolsIndex || indexPath.section == otherActionsIndex)
     {
         TableViewCellWithButton *cellWithButton = [tableView dequeueReusableCellWithIdentifier:[TableViewCellWithButton defaultReuseIdentifier] forIndexPath:indexPath];
-        
+
         NSNumber *actionNumber;
         if (indexPath.section == adminToolsIndex && indexPath.row < adminActionsArray.count)
         {
@@ -929,14 +1117,14 @@ Please see LICENSE in the repository root for full details.
         {
             actionNumber = otherActionsArray[indexPath.row];
         }
-        
+
         if (actionNumber)
         {
             NSString *title = [self actionButtonTitle:actionNumber.unsignedIntegerValue];
-            
+
             [cellWithButton.mxkButton setTitle:title forState:UIControlStateNormal];
             [cellWithButton.mxkButton setTitle:title forState:UIControlStateHighlighted];
-            
+
             if (actionNumber.unsignedIntegerValue == MXKRoomMemberDetailsActionKick)
             {
                 [cellWithButton.mxkButton setTitleColor:ThemeService.shared.theme.warningColor forState:UIControlStateNormal];
@@ -947,18 +1135,18 @@ Please see LICENSE in the repository root for full details.
                 [cellWithButton.mxkButton setTitleColor:ThemeService.shared.theme.textPrimaryColor forState:UIControlStateNormal];
                 [cellWithButton.mxkButton setTitleColor:ThemeService.shared.theme.textPrimaryColor forState:UIControlStateHighlighted];
             }
-            
+
             [cellWithButton.mxkButton addTarget:self action:@selector(onActionButtonPressed:) forControlEvents:UIControlEventTouchUpInside];
-            
+
             cellWithButton.mxkButton.tag = actionNumber.unsignedIntegerValue;
         }
-        
+
         cell = cellWithButton;
     }
     else if (indexPath.section == directChatsIndex)
     {
         RoomTableViewCell *roomCell = [tableView dequeueReusableCellWithIdentifier:[RoomTableViewCell defaultReuseIdentifier] forIndexPath:indexPath];
-        
+
         if (indexPath.row < directChatsArray.count)
         {
             MXRoom *room = [self.mainSession roomWithRoomId:directChatsArray[indexPath.row]];
@@ -974,31 +1162,62 @@ Please see LICENSE in the repository root for full details.
             roomCell.avatarImageView.userInteractionEnabled = NO;
             roomCell.titleLabel.text = [VectorL10n roomParticipantsActionStartNewChat];
         }
-        
+
         cell = roomCell;
     }
     else if (indexPath.section == devicesIndex)
     {
         DeviceTableViewCell *deviceCell = [tableView dequeueReusableCellWithIdentifier:[DeviceTableViewCell defaultReuseIdentifier] forIndexPath:indexPath];
         deviceCell.selectionStyle = UITableViewCellSelectionStyleNone;
-        
+
         if (indexPath.row < devicesArray.count)
         {
             MXDeviceInfo *deviceInfo = devicesArray[indexPath.row];
             [deviceCell render:deviceInfo];
             deviceCell.delegate = self;
-            
+
             // Display here the Verify and Block buttons except if the device is the current one.
             deviceCell.verifyButton.hidden = deviceCell.blockButton.hidden = [deviceInfo.deviceId isEqualToString:self.mxRoom.mxSession.matrixRestClient.credentials.deviceId];
         }
         cell = deviceCell;
+    }
+    else if (indexPath.section == extendedProfileIndex)
+    {
+        // Verwende eine Zelle mit zwei Textzeilen für erweiterte Profildaten
+        UITableViewCell *extendedProfileCell = [tableView dequeueReusableCellWithIdentifier:@"SubtitleCell"];
+        if (!extendedProfileCell) {
+            extendedProfileCell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"SubtitleCell"];
+        }
+        extendedProfileCell.selectionStyle = UITableViewCellSelectionStyleNone;
+
+        if (indexPath.row < self.extendedProfileKeys.count)
+        {
+            NSString *key = self.extendedProfileKeys[indexPath.row];
+            NSString *value = self.extendedProfileData[key];
+            NSString *displayKey = [self displayNameForProfileKey:key];
+
+            // Zeige den Feldnamen als Haupttext und den Wert als Untertitel an
+            extendedProfileCell.textLabel.text = displayKey;
+            extendedProfileCell.textLabel.font = [UIFont systemFontOfSize:15.0 weight:UIFontWeightMedium];
+            extendedProfileCell.textLabel.textColor = ThemeService.shared.theme.textPrimaryColor;
+            
+            extendedProfileCell.detailTextLabel.text = value ?: @"";
+            extendedProfileCell.detailTextLabel.font = [UIFont systemFontOfSize:15.0];
+            extendedProfileCell.detailTextLabel.textColor = ThemeService.shared.theme.textSecondaryColor;
+            extendedProfileCell.detailTextLabel.numberOfLines = 0; // Erlaubt Umbrüche bei längeren Werten
+            
+            // Keine Aktionsbuttons
+            extendedProfileCell.accessoryType = UITableViewCellAccessoryNone;
+        }
+
+        cell = extendedProfileCell;
     }
     else
     {
         // Create a fake cell to prevent app from crashing
         cell = [[UITableViewCell alloc] init];
     }
-    
+
     return cell;
 }
 
@@ -1007,7 +1226,7 @@ Please see LICENSE in the repository root for full details.
 - (void)tableView:(UITableView *)tableView willDisplayCell:(UITableViewCell *)cell forRowAtIndexPath:(NSIndexPath *)indexPath;
 {
     cell.backgroundColor = ThemeService.shared.theme.backgroundColor;
-    
+
     // Update the selected background view
     if (ThemeService.shared.theme.selectedBackgroundColor)
     {
@@ -1030,6 +1249,17 @@ Please see LICENSE in the repository root for full details.
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section
 {
     return TABLEVIEW_SECTION_HEADER_HEIGHT;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    // Für die erweiterte Profil-Sektion eine größere Höhe verwenden
+    if (indexPath.section == extendedProfileIndex)
+    {
+        return UITableViewAutomaticDimension; // Automatische Höhe je nach Inhalt
+    }
+    
+    return TABLEVIEW_ROW_CELL_HEIGHT;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(nonnull NSIndexPath *)indexPath
@@ -1064,7 +1294,7 @@ Please see LICENSE in the repository root for full details.
             // Create a new direct chat with the member
             UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
             button.tag = MXKRoomMemberDetailsActionStartChat;
-            
+
             [super onActionButtonPressed:button];
         }
     }
@@ -1074,11 +1304,11 @@ Please see LICENSE in the repository root for full details.
         if (selectedCell && [selectedCell isKindOfClass:TableViewCellWithButton.class])
         {
             TableViewCellWithButton *cell = (TableViewCellWithButton*)selectedCell;
-            
+
             [self onActionButtonPressed:cell.mxkButton];
         }
     }
-    
+
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
@@ -1093,9 +1323,9 @@ Please see LICENSE in the repository root for full details.
         {
             return;
         }
-        
+
         UIButton *button = (UIButton*)sender;
-        
+
         switch (button.tag)
         {
             case MXKRoomMemberDetailsActionSetDefaultPowerLevel:
@@ -1118,33 +1348,33 @@ Please see LICENSE in the repository root for full details.
             case MXKRoomMemberDetailsActionBan:
             {
                 __weak typeof(self) weakSelf = self;
-                
+
                 // Ban
                 currentAlert = [UIAlertController alertControllerWithTitle:[VectorL10n roomEventActionBanPromptReason]
                                                                    message:nil
                                                             preferredStyle:UIAlertControllerStyleAlert];
-                
+
                 [currentAlert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
                     textField.secureTextEntry = NO;
                     textField.placeholder = nil;
                     textField.keyboardType = UIKeyboardTypeDefault;
                 }];
-                
+
                 [currentAlert addAction:[UIAlertAction actionWithTitle:[VectorL10n cancel]
                                                                  style:UIAlertActionStyleDefault
                                                                handler:^(UIAlertAction * action) {
-                                                                   
+
                                                                    if (weakSelf)
                                                                    {
                                                                        typeof(self) self = weakSelf;
                                                                        self->currentAlert = nil;
                                                                    }
-                                                                   
+
                                                                }]];
-                
+
                 [currentAlert addAction:[UIAlertAction actionWithTitle:[VectorL10n ban]
                                                                  style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                                                                     
+
                                                                      if (weakSelf)
                                                                      {
                                                                          typeof(self) self = weakSelf;
@@ -1152,29 +1382,29 @@ Please see LICENSE in the repository root for full details.
                                                                          NSString *text = [self->currentAlert textFields].firstObject.text;
 
                                                                          self->currentAlert = nil;
-                                                                         
+
                                                                          [self startActivityIndicator];
-                                                                         
+
                                                                          // kick user
                                                                          [self.mxRoom banUser:self.mxRoomMember.userId reason:text success:^{
-                                                                             
+
                                                                              __strong __typeof(weakSelf)self = weakSelf;
                                                                              [self stopActivityIndicator];
-                                                                             
+
                                                                          } failure:^(NSError *error) {
-                                                                             
+
                                                                              __strong __typeof(weakSelf)self = weakSelf;
                                                                              [self stopActivityIndicator];
-                                                                             
+
                                                                              MXLogDebug(@"[RoomMemberDetailVC] Ban user (%@) failed", self.mxRoomMember.userId);
                                                                              //Alert user
                                                                              [[AppDelegate theDelegate] showErrorAsAlert:error];
-                                                                             
+
                                                                          }];
                                                                      }
-                                                                     
+
                                                                  }]];
-                
+
                 [currentAlert mxk_setAccessibilityIdentifier:@"RoomMemberDetailsVCBanAlert"];
                 [self presentViewController:currentAlert animated:YES completion:nil];
                 break;
@@ -1182,33 +1412,33 @@ Please see LICENSE in the repository root for full details.
             case MXKRoomMemberDetailsActionKick:
             {
                 __weak typeof(self) weakSelf = self;
-                
+
                 // Kick
                 currentAlert = [UIAlertController alertControllerWithTitle:[VectorL10n roomEventActionKickPromptReason]
                                                                    message:nil
                                                             preferredStyle:UIAlertControllerStyleAlert];
-                
+
                 [currentAlert addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
                     textField.secureTextEntry = NO;
                     textField.placeholder = nil;
                     textField.keyboardType = UIKeyboardTypeDefault;
                 }];
-                
+
                 [currentAlert addAction:[UIAlertAction actionWithTitle:[VectorL10n cancel]
                                                                  style:UIAlertActionStyleDefault
                                                                handler:^(UIAlertAction * action) {
-                                                                   
+
                                                                    if (weakSelf)
                                                                    {
                                                                        typeof(self) self = weakSelf;
                                                                        self->currentAlert = nil;
                                                                    }
-                                                                   
+
                                                                }]];
-                
+
                 [currentAlert addAction:[UIAlertAction actionWithTitle:[VectorL10n remove]
                                                                  style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
-                                                                   
+
                                                                    if (weakSelf)
                                                                    {
                                                                        typeof(self) self = weakSelf;
@@ -1216,29 +1446,29 @@ Please see LICENSE in the repository root for full details.
                                                                        NSString *text = [self->currentAlert textFields].firstObject.text;
 
                                                                        self->currentAlert = nil;
-                                                                       
+
                                                                        [self startActivityIndicator];
-                                                                       
+
                                                                        // kick user
                                                                        [self.mxRoom kickUser:self.mxRoomMember.userId reason:text success:^{
-                                                                           
+
                                                                            __strong __typeof(weakSelf)self = weakSelf;
                                                                            [self stopActivityIndicator];
-                                                                           
+
                                                                        } failure:^(NSError *error) {
-                                                                           
+
                                                                            __strong __typeof(weakSelf)self = weakSelf;
                                                                            [self stopActivityIndicator];
-                                                                           
+
                                                                            MXLogDebug(@"[RoomMemberDetailVC] Removing user (%@) failed", self.mxRoomMember.userId);
                                                                            //Alert user
                                                                            [[AppDelegate theDelegate] showErrorAsAlert:error];
-                                                                           
+
                                                                        }];
                                                                    }
-                                                                   
+
                                                                }]];
-                
+
                 [currentAlert mxk_setAccessibilityIdentifier:@"RoomMemberDetailsVCKickAlert"];
                 [self presentViewController:currentAlert animated:YES completion:nil];
                 break;
@@ -1254,24 +1484,24 @@ Please see LICENSE in the repository root for full details.
 - (void)handleTapGesture:(UITapGestureRecognizer*)tapGestureRecognizer
 {
     UIView *view = tapGestureRecognizer.view;
-    
+
     if (view == memberTitleView.memberAvatarMask || view == self.roomMemberAvatarMask)
     {
         MXWeakify(self);
-        
+
         // Show the avatar in full screen
         __block MXKImageView * avatarFullScreenView = [[MXKImageView alloc] initWithFrame:CGRectZero];
         avatarFullScreenView.stretchable = YES;
 
         [avatarFullScreenView setRightButtonTitle:[VectorL10n ok]
                                           handler:^(MXKImageView* imageView, NSString* buttonTitle) {
-                                              
+
                                               MXStrongifyAndReturnIfNil(self);
                                               [avatarFullScreenView dismissSelection];
                                               [avatarFullScreenView removeFromSuperview];
-                                              
+
                                               avatarFullScreenView = nil;
-                                              
+
                                               // Restore the status bar
                                               self->isStatusBarHidden = NO;
                                               [self setNeedsStatusBarAppearanceUpdate];
@@ -1284,7 +1514,7 @@ Please see LICENSE in the repository root for full details.
                              mediaManager:self.mainSession.mediaManager];
 
         [avatarFullScreenView showFullScreen];
-        
+
         // Hide the status bar
         isStatusBarHidden = YES;
         // Trigger status bar update
@@ -1292,7 +1522,7 @@ Please see LICENSE in the repository root for full details.
     }
 }
 
-#pragma mark - 
+#pragma mark -
 
 - (void)deviceTableViewCell:(DeviceTableViewCell*)deviceTableViewCell updateDeviceVerification:(MXDeviceVerification)verificationStatus
 {

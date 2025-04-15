@@ -3206,3 +3206,18 @@ To enable access, tap Settings> Location and select Always";
 "pill_message" = "Message";
 "pill_message_from" = "Message from %@";
 "pill_message_in" = "Message in %@";
+
+// Extended Profile Keys
+"extended_profile_section_title" = "Profil";
+"extended_profile_address" = "Address";
+"extended_profile_title" = "Title";
+"extended_profile_specialization" = "Specialization";
+"extended_profile_website" = "Website";
+"extended_profile_further_info" = "Further information";
+"extended_profile_practice_name" = "Practice name";
+"extended_profile_business_street" = "Street";
+"extended_profile_business_street_nr" = "Street number";
+"extended_profile_business_city" = "City";
+"extended_profile_business_plz" = "Zip code";
+"extended_profile_business_email" = "E-Mail-Address";
+"extended_profile_business_tel" = "Phone number";
