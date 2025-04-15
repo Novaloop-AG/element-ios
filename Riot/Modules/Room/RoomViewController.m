@@ -2327,6 +2327,14 @@ static CGSize kThreadListBarButtonItemImageSize;
 
 - (void)showRoomInfoWithInitialSection:(RoomInfoSection)roomInfoSection animated:(BOOL)animated
 {
+    if (self.roomDataSource.room.isDirect) {
+        NSString *directUserId = self.roomDataSource.room.directUserId;
+        MXRoomMember *member = [self.roomDataSource.roomState.members memberWithUserId:directUserId];
+        if (member) {
+            [self showMemberDetails:member];
+            return;
+        }
+    }
     RoomInfoCoordinatorParameters *parameters = [[RoomInfoCoordinatorParameters alloc] initWithSession:self.roomDataSource.mxSession room:self.roomDataSource.room parentSpaceId:self.parentSpaceId initialSection:roomInfoSection canAddParticipants: !self.isWaitingForOtherParticipants];
 
     self.roomInfoCoordinatorBridgePresenter = [[RoomInfoCoordinatorBridgePresenter alloc] initWithParameters:parameters];
@@ -5556,6 +5564,23 @@ static CGSize kThreadListBarButtonItemImageSize;
 }
 
 #pragma mark - RoomTitleViewTapGestureDelegate
+
+- (void)roomTitleViewDidTap:(RoomTitleView*)titleView
+{
+    if (self.roomDataSource.room.isDirect)
+    {
+        NSString *directUserId = self.roomDataSource.room.directUserId;
+        MXRoomMember *member = [self.roomDataSource.roomState.members memberWithUserId:directUserId];
+        if (member)
+        {
+            [self showMemberDetails:member];
+        }
+    }
+    else
+    {
+        [self showRoomInfo];
+    }
+}
 
 - (void)roomTitleView:(RoomTitleView*)titleView recognizeTapGesture:(UITapGestureRecognizer*)tapGestureRecognizer
 {
