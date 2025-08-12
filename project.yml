@@ -3,8 +3,10 @@ attributes:
   ORGANIZATIONNAME: matrix.org
 
 configs:
-  Debug: debug
-  Release: release
+  Debug:
+    xcconfig: Config/Project-Debug.xcconfig
+  Release:
+    xcconfig: Config/Project-Release.xcconfig
 
 fileGroups:
     - README.md
@@ -13,10 +15,6 @@ fileGroups:
     - Podfile
     - project.yml
     - changelog.d
-
-configFiles:
-  Debug: Config/Project-Debug.xcconfig
-  Release: Config/Project-Release.xcconfig
 
 options:
   defaultConfig: Release
