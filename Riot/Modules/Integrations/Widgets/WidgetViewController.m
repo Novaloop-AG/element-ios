@@ -10,7 +10,6 @@ Please see LICENSE in the repository root for full details.
 
 #import "IntegrationManagerViewController.h"
 #import "GeneratedInterface-Swift.h"
-#import "MXOpenIdToken.h"
 #import "MXRestClient+Riot.h"
 
 NSString *const kJavascriptSendResponseToPostMessageAPI = @"riotIOS.sendResponse('%@', %@);";

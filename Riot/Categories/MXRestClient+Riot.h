@@ -6,7 +6,6 @@ Please see LICENSE in the repository root for full details.
 */
 
 #import <MatrixSDK/MatrixSDK.h>
-#import "MXOpenIdToken.h"
 
 @interface MXRestClient (Riot)
 
