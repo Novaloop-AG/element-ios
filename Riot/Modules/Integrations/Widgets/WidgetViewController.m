@@ -10,6 +10,8 @@ Please see LICENSE in the repository root for full details.
 
 #import "IntegrationManagerViewController.h"
 #import "GeneratedInterface-Swift.h"
+#import "MXOpenIdToken.h"
+#import "MXRestClient+Riot.h"
 
 NSString *const kJavascriptSendResponseToPostMessageAPI = @"riotIOS.sendResponse('%@', %@);";
 
@@ -482,6 +484,11 @@ NSString *const kJavascriptSendResponseToPostMessageAPI = @"riotIOS.sendResponse
         // Consider we are done with the sticker picker widget
         [self withdrawViewControllerAnimated:YES completion:nil];
     }
+    else if ([@"get_openid" isEqualToString:action])
+    {
+        // MSC1960: Widget authentication via OpenID
+        [self handleOpenIDRequest:requestId data:requestData];
+    }
     else if ([@"integration_manager_open" isEqualToString:action])
     {
         NSDictionary *widgetData;
@@ -571,6 +578,149 @@ NSString *const kJavascriptSendResponseToPostMessageAPI = @"riotIOS.sendResponse
                                          }
                                  }
                        toRequest:requestId];
+}
+
+#pragma mark - MSC1960 OpenID Authentication
+
+- (void)handleOpenIDRequest:(NSString*)requestId data:(NSDictionary*)requestData
+{
+    MXSession *session = widget.mxSession;
+    
+    if (!session || !session.matrixRestClient)
+    {
+        [self sendOpenIDResponse:@{@"state": @"blocked"} toRequest:requestId];
+        return;
+    }
+    
+    // Check if the user created the widget (no permission needed)
+    if ([widget.widgetEvent.sender isEqualToString:session.myUser.userId])
+    {
+        [self requestOpenIDTokenAndSend:requestId];
+        return;
+    }
+    
+    // Check stored permission for this widget
+    RiotSharedSettings *sharedSettings = [[RiotSharedSettings alloc] initWithSession:session];
+    WidgetPermission permission = [sharedSettings openIDPermissionFor:widget];
+    
+    if (permission == WidgetPermissionGranted)
+    {
+        [self requestOpenIDTokenAndSend:requestId];
+    }
+    else if (permission == WidgetPermissionDeclined)
+    {
+        [self sendOpenIDResponse:@{@"state": @"blocked"} toRequest:requestId];
+    }
+    else
+    {
+        // Ask for permission
+        [self askOpenIDPermissionWithCompletion:^(BOOL granted) {
+            // Store permission
+            [sharedSettings setOpenIDPermission:granted ? WidgetPermissionGranted : WidgetPermissionDeclined
+                                            for:self.widget
+                                        success:nil
+                                        failure:^(NSError * _Nullable error) {
+                MXLogDebug(@"[WidgetVC] Failed to store OpenID permission: %@", error);
+            }];
+            
+            if (granted)
+            {
+                [self requestOpenIDTokenAndSend:requestId];
+            }
+            else
+            {
+                [self sendOpenIDResponse:@{@"state": @"blocked"} toRequest:requestId];
+            }
+        }];
+    }
+}
+
+- (void)requestOpenIDTokenAndSend:(NSString*)requestId
+{
+    MXSession *session = widget.mxSession;
+    
+    // First send request state
+    [self sendOpenIDResponse:@{@"state": @"request"} toRequest:requestId];
+    
+    // Request OpenID token from homeserver
+    [session.matrixRestClient openIdToken:^(MXOpenIdToken *openIdToken) {
+        if (openIdToken && openIdToken.accessToken)
+        {
+            NSMutableDictionary *response = [NSMutableDictionary dictionary];
+            response[@"state"] = @"allowed";
+            response[@"access_token"] = openIdToken.accessToken;
+            response[@"token_type"] = openIdToken.tokenType ?: @"Bearer";
+            response[@"matrix_server_name"] = openIdToken.matrixServerName ?: session.matrixRestClient.homeserver;
+            response[@"expires_in"] = @(openIdToken.expiresIn);
+            
+            [self sendOpenIDResponse:response toRequest:requestId];
+            
+            // Also send via toWidget action for MSC1960 compliance
+            [self sendOpenIDCredentialsToWidget:response originalRequestId:requestId];
+        }
+        else
+        {
+            [self sendOpenIDResponse:@{@"state": @"blocked"} toRequest:requestId];
+        }
+    } failure:^(NSError *error) {
+        MXLogDebug(@"[WidgetVC] Failed to get OpenID token: %@", error);
+        [self sendOpenIDResponse:@{@"state": @"blocked"} toRequest:requestId];
+    }];
+}
+
+- (void)sendOpenIDResponse:(NSDictionary*)response toRequest:(NSString*)requestId
+{
+    [self sendNSObjectResponse:@{@"response": response} toRequest:requestId];
+}
+
+- (void)sendOpenIDCredentialsToWidget:(NSDictionary*)credentials originalRequestId:(NSString*)requestId
+{
+    NSMutableDictionary *data = [credentials mutableCopy];
+    data[@"original_request_id"] = requestId;
+    
+    NSDictionary *message = @{
+        @"api": @"toWidget",
+        @"action": @"openid_credentials",
+        @"data": data
+    };
+    
+    NSError *error;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:message options:0 error:&error];
+    
+    if (!error && jsonData)
+    {
+        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+        NSString *js = [NSString stringWithFormat:@"window.postMessage(%@, '*');", jsonString];
+        [webView evaluateJavaScript:js completionHandler:nil];
+    }
+}
+
+- (void)askOpenIDPermissionWithCompletion:(void (^)(BOOL granted))completion
+{
+    NSString *widgetName = widget.name ?: widget.type ?: @"widget";
+    NSString *message = [NSString stringWithFormat:@"The widget '%@' is requesting to verify your identity. This will share your Matrix user ID with the widget.", widgetName];
+    
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Identity Verification Request"
+                                                                   message:message
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"Decline"
+                                              style:UIAlertActionStyleCancel
+                                            handler:^(UIAlertAction * action) {
+        if (completion) {
+            completion(NO);
+        }
+    }]];
+    
+    [alert addAction:[UIAlertAction actionWithTitle:@"Allow"
+                                              style:UIAlertActionStyleDefault
+                                            handler:^(UIAlertAction * action) {
+        if (completion) {
+            completion(YES);
+        }
+    }]];
+    
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 #pragma mark - Private methods

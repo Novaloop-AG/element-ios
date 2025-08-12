@@ -83,6 +83,20 @@ class RiotSharedSettings: NSObject {
             return .undefined
         }
     }
+    
+    // MARK: OpenID permissions for widgets (MSC1960)
+    func openIDPermission(for widget: Widget) -> WidgetPermission {
+        guard let allowedWidgets = getAllowedWidgets() else {
+            return .undefined
+        }
+
+        let openIDKey = "\(widget.widgetEvent.eventId ?? "")_openid"
+        if let value = allowedWidgets.widgets[openIDKey] {
+            return value == true ? .granted : .declined
+        } else {
+            return .undefined
+        }
+    }
 
     func getAllowedWidgets() -> RiotSettingAllowedWidgets? {
         guard let allowedWidgetsDict = getAccountData(forEventType: Settings.allowedWidgets) else {
@@ -119,6 +133,36 @@ class RiotSharedSettings: NSObject {
         allowedWidgetsDict[RiotSettingAllowedWidgets.CodingKeys.widgets.rawValue] = widgets
 
         return session.setAccountData(allowedWidgetsDict, forType: Settings.allowedWidgets, success: success, failure: failure)
+    }
+    
+    @discardableResult
+    func setOpenIDPermission(_ permission: WidgetPermission,
+                             for widget: Widget,
+                             success: (() -> Void)?,
+                             failure: ((Error?) -> Void)?)
+        -> MXHTTPOperation? {
+
+        guard let widgetEventId = widget.widgetEvent.eventId else {
+            return nil
+        }
+
+        var widgets = getAllowedWidgets()?.widgets ?? [:]
+        let openIDKey = "\(widgetEventId)_openid"
+
+        switch permission {
+        case .undefined:
+            widgets.removeValue(forKey: openIDKey)
+        case .granted:
+            widgets[openIDKey] = true
+        case .declined:
+            widgets[openIDKey] = false
+        }
+
+        // Update only the "widgets" field in the account data
+        var allowedWidgetsDict = getAccountData(forEventType: Settings.allowedWidgets) ?? [:]
+        allowedWidgetsDict[RiotSettingAllowedWidgets.CodingKeys.widgets.rawValue] = widgets
+
+        return session.setAccountData(allowedWidgetsDict, forType: Settings.allowedWidgets, success: success ?? {}, failure: failure ?? { _ in })
     }
 
 
