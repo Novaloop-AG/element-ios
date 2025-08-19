@@ -1,9 +1,9 @@
 // Permissions usage explanations
-"NSCameraUsageDescription" = "Die Kamera wird verwendet, um Videoanrufe zu machen, oder Fotos aufzunehmen und hochzuladen.";
-"NSPhotoLibraryUsageDescription" = "Erlaube den Zugriff auf die Fotos um Fotos und Videos aus deiner Bibliothek hochzuladen.";
-"NSMicrophoneUsageDescription" = "Element benötigt Zugriff auf das Mikrofon um Anrufe zu tätigen und Videos oder Sprachnachrichten aufzunehmen.";
-"NSContactsUsageDescription" = "Deine Kontakte werden mit deinem Identitätsserver geteilt, um dir zu helfen deine Kontakte auf Matrix zu finden.";
-"NSCalendarsUsageDescription" = "Sieh dir deine geplanten Meetings in der App an.";
-"NSFaceIDUsageDescription" = "Face-ID wird zum Zugriff auf deine App verwendet.";
-"NSLocationWhenInUseUsageDescription" = "Wenn du deinen Standort mit Personen teilst, braucht Element Zugriff um ihnen eine Karte anzuzeigen.";
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "Zum Teilen deines Standorts benötigt Element Zugriff, damit es dir eine Karte zeigen kann.";
+"NSCameraUsageDescription" = "Der Kamerazugriff wird für Videoanrufe mit Ihren Kontakten, zum Aufnehmen von Fotos und Videos zum Teilen in Unterhaltungen sowie zum Scannen von QR-Codes für die sichere Sitzungsverifizierung benötigt.";
+"NSPhotoLibraryUsageDescription" = "Der Zugriff auf die Fotomediathek wird verwendet, um Fotos und Videos in Unterhaltungen zu teilen und Profilbilder festzulegen.";
+"NSMicrophoneUsageDescription" = "Der Mikrofonzugriff wird für Sprach- und Videoanrufe, die Aufnahme von Sprachnachrichten und die Aufnahme von Videos mit Ton verwendet.";
+"NSContactsUsageDescription" = "Der Kontaktzugriff hilft Ihnen, Personen zu finden und sich mit ihnen zu verbinden, die Sie kennen und die Matrix verwenden.";
+"NSCalendarsUsageDescription" = "Der Kalenderzugriff wird verwendet, um geplante Besprechungen anzuzeigen und Ihnen zu helfen, Anrufen zur richtigen Zeit beizutreten.";
+"NSFaceIDUsageDescription" = "Face ID wird verwendet, um Ihre Unterhaltungen zu sichern und Ihre Privatsphäre mit biometrischer Authentifizierung zu schützen.";
+"NSLocationWhenInUseUsageDescription" = "Der Standortzugriff wird verwendet, um Ihre aktuelle Position mit Kontakten in Unterhaltungen zu teilen und Standortkarten anzuzeigen.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Der Standortzugriff wird verwendet, um Ihre aktuelle Position mit Kontakten in Unterhaltungen zu teilen und Standortkarten anzuzeigen.";

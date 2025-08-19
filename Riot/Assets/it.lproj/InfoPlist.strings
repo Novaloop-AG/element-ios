@@ -1,9 +1,9 @@
 // Permissions usage explanations
-"NSCameraUsageDescription" = "La fotocamera viene usata per fare videochiamate, o scattare/registrare e inviare foto e video.";
-"NSPhotoLibraryUsageDescription" = "Consenti l'accesso alle foto per inviare foto e video dalla tua libreria.";
-"NSMicrophoneUsageDescription" = "Element ha bisogno di accedere al microfono per effettuare e ricevere chiamate, registrare video e messaggi vocali.";
-"NSContactsUsageDescription" = "Verranno condivisi con il tuo server d'identità per aiutarti a trovare i tuoi contatti su Matrix.";
-"NSCalendarsUsageDescription" = "Vedi le tue riunioni programmate nell'app.";
-"NSFaceIDUsageDescription" = "Face ID viene usato per accedere all'app.";
-"NSLocationWhenInUseUsageDescription" = "Quando condividi la tua posizione con altre persone, Element richiede l'accesso per mostrare loro una mappa.";
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "Quando condividi la tua posizione con altre persone, Element richiede l'accesso per mostrare loro una mappa.";
+"NSCameraUsageDescription" = "L'accesso alla fotocamera è necessario per le videochiamate con i tuoi contatti, scattare foto e video da condividere nelle conversazioni e scansionare codici QR per la verifica sicura delle sessioni.";
+"NSPhotoLibraryUsageDescription" = "L'accesso alla libreria foto è utilizzato per condividere foto e video nelle conversazioni e impostare immagini del profilo.";
+"NSMicrophoneUsageDescription" = "L'accesso al microfono è utilizzato per chiamate vocali e video, registrazione di messaggi vocali e acquisizione di video con audio.";
+"NSContactsUsageDescription" = "L'accesso ai contatti ti aiuta a trovare e connetterti con persone che conosci che utilizzano Matrix.";
+"NSCalendarsUsageDescription" = "L'accesso al calendario è utilizzato per visualizzare le riunioni programmate e aiutarti a partecipare alle chiamate al momento giusto.";
+"NSFaceIDUsageDescription" = "Face ID è utilizzato per proteggere le tue conversazioni e tutelare la tua privacy con l'autenticazione biometrica.";
+"NSLocationWhenInUseUsageDescription" = "L'accesso alla posizione è utilizzato per condividere la tua posizione attuale con i contatti nelle conversazioni e visualizzare mappe di localizzazione.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "L'accesso alla posizione è utilizzato per condividere la tua posizione attuale con i contatti nelle conversazioni e visualizzare mappe di localizzazione.";
