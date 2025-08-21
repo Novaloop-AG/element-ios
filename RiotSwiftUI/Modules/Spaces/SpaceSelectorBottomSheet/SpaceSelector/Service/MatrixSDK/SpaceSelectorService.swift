@@ -56,7 +56,7 @@ class SpaceSelectorService: SpaceSelectorServiceProtocol {
         var itemList: [SpaceSelectorListItemData] = []
         itemList.append(contentsOf: invitedSpaces)
         if showHomeSpace, parentSpaceId == nil {
-            itemList.append(SpaceSelectorListItemData(id: SpaceSelectorConstants.homeSpaceId, icon: Asset.Images.sideMenuActionIconFeedback.image, displayName: VectorL10n.allChatsTitle, isJoined: true))
+            itemList.append(SpaceSelectorListItemData(id: SpaceSelectorConstants.homeSpaceId, icon: UIImage(systemName: "message"), displayName: VectorL10n.allChatsTitle, isJoined: true))
         }
         itemList.append(contentsOf: joinedSpaces)
 
